@@ -2,20 +2,35 @@ import tkinter as tk
 import random
 
 class ColorMatchingGame:
-    def __init__(self, master):
+    def __init__(self, master, difficulty):
         self.master = master
         self.master.title("Color Matching Game")
-        self.colors = ["red", "blue", "yellow", "green", "orange", "purple", "pink", "cyan"]
-        self.colors = self.colors * 2  # Create pairs
-        random.shuffle(self.colors)
+        self.difficulty = difficulty
+        self.setup_game()
         self.buttons = []
         self.first = None
         self.create_widgets()
 
+    def setup_game(self):
+        if self.difficulty == "Easy":
+            self.grid_size = 2
+            self.colors = ["red", "blue"]
+        elif self.difficulty == "Medium":
+            self.grid_size = 4
+            self.colors = ["red", "blue", "yellow", "green"]
+        elif self.difficulty == "Hard":
+            self.grid_size = 6
+            self.colors = ["red", "blue", "yellow", "green", "orange", "purple"]
+        else:
+            raise ValueError("Invalid difficulty level")
+
+        self.colors = self.colors * (self.grid_size * self.grid_size // len(self.colors))
+        random.shuffle(self.colors)
+
     def create_widgets(self):
-        for i in range(4):
+        for i in range(self.grid_size):
             row = []
-            for j in range(4):
+            for j in range(self.grid_size):
                 button = tk.Button(self.master, width=10, height=5, command=lambda i=i, j=j: self.on_button_click(i, j))
                 button.grid(row=i, column=j)
                 row.append(button)
@@ -23,17 +38,17 @@ class ColorMatchingGame:
 
     def on_button_click(self, i, j):
         button = self.buttons[i][j]
-        if button["bg"] == "SystemButtonFace":  # If the button color is default
-            button["bg"] = self.colors[i * 4 + j]
-            button["activebackground"] = self.colors[i * 4 + j]
-            if self.first is None:
+        if button["bg"] == "SystemButtonFace":  # Default button color
+            button["bg"] = self.colors[i * self.grid_size + j]
+            button["activebackground"] = self.colors[i * self.grid_size + j]
+            if not self.first:
                 self.first = (i, j)
             else:
                 first_i, first_j = self.first
-                if self.colors[first_i * 4 + first_j] == self.colors[i * 4 + j]:
-                    self.first = None  # Pair matched, reset first
+                if self.colors[first_i * self.grid_size + first_j] == self.colors[i * self.grid_size + j]:
+                    self.first = None  # Pair matched
                 else:
-                    self.master.after(500, self.hide_buttons, first_i, first_j, i, j)  # Hide colors after delay
+                    self.master.after(500, self.hide_buttons, first_i, first_j, i, j)  # Hide after 500ms
                     self.first = None
 
     def hide_buttons(self, first_i, first_j, i, j):
@@ -43,10 +58,17 @@ class ColorMatchingGame:
         self.buttons[i][j]["activebackground"] = "SystemButtonFace"
 
 if __name__ == "__main__":
-    try:
+    def start_game(difficulty):
         root = tk.Tk()
-        game = ColorMatchingGame(root)
+        game = ColorMatchingGame(root, difficulty)
         root.mainloop()
-    except tk.TclError as e:
-        print(f"Tkinter Error: {e}")
-        print("Ensure that Tkinter is properly installed and configured in your environment.")
+
+    root = tk.Tk()
+    root.title("Select Difficulty")
+
+    tk.Label(root, text="Select Difficulty Level").pack()
+    tk.Button(root, text="Easy", command=lambda: [root.destroy(), start_game("Easy")]).pack()
+    tk.Button(root, text="Medium", command=lambda: [root.destroy(), start_game("Medium")]).pack()
+    tk.Button(root, text="Hard", command=lambda: [root.destroy(), start_game("Hard")]).pack()
+
+    root.mainloop()
